@@ -143,10 +143,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="GetDefaultInterfaceIP-verbose.cpp" />
     <ClCompile Include="GetDefaultInterfaceIP.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="GetDefaultInterfaceIP-verbose.h" />
     <ClInclude Include="GetDefaultInterfaceIP.h" />
     <ClInclude Include="HeapResource.h" />
   </ItemGroup>

@@ -21,12 +21,18 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="GetDefaultInterfaceIP-verbose.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="HeapResource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GetDefaultInterfaceIP.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GetDefaultInterfaceIP-verbose.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
