@@ -5,10 +5,15 @@
 #include <arpa/inet.h>
 
 #ifdef __linux__
-#include <linux/wireless.h>
+#  include <linux/wireless.h>
 #else
-#include <net/if.h>
-#include <net/if_media.h>
+#  include <net/if.h>
+#  include <net/if_media.h>
+#  ifdef __APPLE__
+#    define ERR_NO_SUPPORT EOPNOTSUPP
+#  else // BSD
+#    define ERR_NO_SUPPORT EINVAL
+#  endif
 #endif
 
 #include <string>
@@ -42,7 +47,7 @@ static bool is_wireless(const char * ifname, const SocketResource& fd)
     if (ioctl(fd, SIOCGIFMEDIA, &req) < 0) {
         // fails for interfaces that don't support the ioctl (like loopbacks)
         // only complain if it's a different kind of failure
-        if (errno != EINVAL) {
+        if (errno != ERR_NO_SUPPORT) {
             err("ioctl() failed");
         }
     } else {
