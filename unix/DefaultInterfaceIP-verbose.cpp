@@ -26,49 +26,52 @@ static void err(const char * msg)
     std::cerr << msg << " (" << errno << ")" << std::endl;
 }
 
-static bool is_wireless(const char * ifname)
+static bool is_wireless(const char * ifname, const SocketResource& fd)
 {
 #ifdef __linux__
-    if (ifname) {
-        SocketResource fd(AF_INET, SOCK_STREAM, 0);
-        if (!fd.is_valid()) {
-            err("socket() failed");
+
+    struct iwreq req { 0 };
+    ::strncpy(req.ifr_name, ifname, IFNAMSIZ - 1);
+    return ioctl(fd, SIOCGIWMODE, &req) >= 0;
+
+#else // BSD / OSX
+
+    struct ifmediareq req;
+    ::memset(&req, 0, sizeof(struct ifmediareq));
+    ::strncpy(req.ifm_name, ifname, IFNAMSIZ - 1);
+    if (ioctl(fd, SIOCGIFMEDIA, &req) < 0) {
+        // fails for interfaces that don't support the ioctl (like loopbacks)
+        // only complain if it's a different kind of failure
+        if (errno != EINVAL) {
+            err("ioctl() failed");
+        }
+    } else {
+        if (!(req.ifm_status & IFM_AVALID)) {
+            std::cout << "  IFM-Active not valid" << std::endl;
         } else {
-            struct iwreq req { 0 };
-            ::strncpy(req.ifr_name, ifname, IFNAMSIZ - 1);
-            return ioctl(fd, SIOCGIWMODE, &req) >= 0;
+            uint64_t type = IFM_TYPE(req.ifm_active);
+            if (type == IFM_IEEE80211) {
+                return true;
+            } else if (type != IFM_ETHER) {
+                std::cout << "  Invalid mediareq type (" << type << ")" << std::endl;
+            }
         }
     }
-#else
+    return false;
+
+#endif
+}
+
+static bool is_wireless(const char * ifname)
+{
     if (ifname) {
         SocketResource fd(AF_INET, SOCK_DGRAM, 0);
         if (!fd.is_valid()) {
             err("socket() failed");
         } else {
-            struct ifmediareq req;
-            ::memset(&req, 0, sizeof(struct ifmediareq));
-            ::strncpy(req.ifm_name, ifname, IFNAMSIZ - 1);
-            if (ioctl(fd, SIOCGIFMEDIA, &req) < 0) {
-                // fails for interfaces that don't support the ioctl (like loopbacks)
-                // only complain if it's a different kind of failure
-                if (errno != EINVAL) {
-                    err("ioctl() failed");
-                }
-            } else {
-                if (!(req.ifm_status & IFM_AVALID)) {
-                    std::cout << "  IFM-Active not valid" << std::endl;
-                } else {
-                    uint64_t type = IFM_TYPE(req.ifm_active);
-                    if (type == IFM_IEEE80211) {
-                        return true;
-                    } else if (type != IFM_ETHER) {
-                        std::cout << "  Invalid mediareq type (" << type << ")" << std::endl;
-                    }
-                }
-            }
+            return is_wireless(ifname, fd);
         }
     }
-#endif
     return false;
 }
 
