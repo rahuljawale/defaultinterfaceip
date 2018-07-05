@@ -31,7 +31,7 @@ static bool is_wireless(const char * ifname, const SocketResource& sock)
     if (ioctl(sock, SIOCGIFMEDIA, &req) >= 0 &&
         (req.ifm_status & IFM_AVALID)
     ) {
-            return IFM_TYPE(req.ifm_active) == IFM_IEEE80211;
+        return IFM_TYPE(req.ifm_active) == IFM_IEEE80211;
     }
     return false;
 #endif
