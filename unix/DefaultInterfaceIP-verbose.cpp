@@ -1,13 +1,19 @@
-#include <sys/types.h>
-#include <ifaddrs.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#include <string.h>
+#include "IfAddrsResource.h"
+#include "SocketResource.h"
 #include <sys/ioctl.h>
-#include <linux/wireless.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#ifdef __linux__
+#include <linux/wireless.h>
+#else
+#include <net/if.h>
+#endif
+
+#include <string>
+#include <cstring>
+
+// verbose-only
 #include <iostream>
 #include <errno.h>
 
@@ -21,28 +27,29 @@ static void err(const char * msg)
 
 static bool is_wireless(const char * ifname)
 {
-    if (!ifname) {
-        return false;
+#ifdef __linux__
+    if (ifname) {
+        SocketResource fd(AF_INET, SOCK_STREAM, 0);
+        if (!fd.is_valid()) {
+            err("socket() failed");
+        } else {
+            struct iwreq req { 0 };
+            ::strncpy(req.ifr_name, ifname, IFNAMSIZ - 1);
+            return ioctl(fd, SIOCGIWMODE, req) >= 0;
+        }
     }
-
-    bool result = false;
-    int fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (fd < 0) {
-        err("socket() failed");
-    } else {
-        struct iwreq req { 0 };
-        strncpy(req.ifr_name, ifname, IFNAMSIZ - 1);
-        result = (ioctl(fd, SIOCGIWMODE, req) >= 0);
-        close(fd);
-    }
-    return result;
+#else
+    std::cout << "  Cannot check for wireless" << std::endl;
+#endif
+    return false;
 }
 
-std::string default_interface_ip()
+std::string default_interface_ip_verbose()
 {
-    struct ifaddrs * ifa;
-    int result = getifaddrs(&ifa);
-    if (result) {
+    std::string defaultAddress;
+    std::string wirelessAddress;
+    IfAddrsResource ifa;
+    if (!ifa.is_valid()) {
         err("getifaddrs() failed");
     } else {
         int id = 1;
@@ -52,9 +59,11 @@ std::string default_interface_ip()
                 continue;
             }
 
+            std::string address = inet_ntoa(sain->sin_addr);
+
             std::cout << "Interface " << id << std::endl;
             std::cout << "  Name: " << (next->ifa_name ? next->ifa_name : "--unset--") << std::endl;
-            std::cout << "  Address: " << inet_ntoa(sain->sin_addr) << std::endl;
+            std::cout << "  Address: " << address << std::endl;
 
             if (next->ifa_flags & IFF_UP) {
                 std::cout << "  Up" << std::endl;
@@ -72,16 +81,32 @@ std::string default_interface_ip()
                 std::cout << "  Loopback" << std::endl;
             }
 
-            if (is_wireless(next->ifa_name)) {
+            bool isWireless = is_wireless(next->ifa_name);
+            if (isWireless) {
                 std::cout << "  Wireless" << std::endl;
             } else {
                 std::cout << "  Wired" << std::endl;
             }
-        }
-        freeifaddrs(ifa);
-    }
 
-    return "TODO";
+            if (
+                (next->ifa_flags & IFF_RUNNING) &&
+                !(next->ifa_flags & IFF_LOOPBACK)
+                ) {
+                if (isWireless) {
+                    if (wirelessAddress.empty()) {
+                        std::cout << "Selecting as wireless" << std::endl;
+                        wirelessAddress = address;
+                    }
+                } else {
+                    if (defaultAddress.empty()) {
+                        std::cout << "  Setting as default" << std::endl;
+                        defaultAddress = address;
+                    }
+                }
+            }
+        }
+    }
+    return defaultAddress.empty() ? wirelessAddress : defaultAddress;
 }
 
 }

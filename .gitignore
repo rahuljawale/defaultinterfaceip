@@ -329,7 +329,8 @@ ASALocalRun/
 # MFractors (Xamarin productivity tool) working folder 
 .mfractor/
 
-DefaultInterfaceIP
-DefaultInterfaceIP-verbose
+defaultinterfaceip
 
 *.o
+
+*.swp

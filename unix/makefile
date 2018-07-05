@@ -1,15 +1,14 @@
-CC=g++
+CC?=g++
 CXXFLAGS+= -Wall -Wpedantic -fPIC -Os -pipe
-LDFLAGS+= -s
+# may only need -lstdc++ for bsd's...not sure
+LDFLAGS+= -s -lstdc++
+OBJS= main.o DefaultInterfaceIP.o DefaultInterfaceIP-verbose.o
 
-all: DefaultInterfaceIP
+all: defaultinterfaceip
 
-verbose: DefaultInterfaceIP-verbose
-
-DefaultInterfaceIP: DefaultInterfaceIP.o main.o
-
-DefaultInterfaceIP-verbose: DefaultInterfaceIP-verbose.o main.o
+defaultinterfaceip: $(OBJS)
+	$(CC) -o $@ $(OBJS) $(LDFLAGS)
 
 .PHONY: clean
 clean:
-	rm -rf *.o
+	rm -rf *.o defaultinterfaceip
