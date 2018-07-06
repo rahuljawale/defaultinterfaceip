@@ -130,7 +130,7 @@ std::string default_interface_ip_verbose()
                 ) {
                 if (isWireless) {
                     if (wirelessAddress.empty()) {
-                        std::cout << "Selecting as wireless" << std::endl;
+                        std::cout << "  Selecting as wireless" << std::endl;
                         wirelessAddress = address;
                     }
                 } else {
@@ -140,6 +140,8 @@ std::string default_interface_ip_verbose()
                     }
                 }
             }
+
+			std::cout << std::endl;
         }
     }
     return defaultAddress.empty() ? wirelessAddress : defaultAddress;
