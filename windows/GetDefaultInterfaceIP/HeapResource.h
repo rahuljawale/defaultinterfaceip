@@ -10,7 +10,6 @@ public:
     explicit HeapResource(HANDLE heap, DWORD flags, SIZE_T sz) :
         _heap(heap),
         _flags(flags),
-        _sz(sz),
         _mem((T*)HeapAlloc(heap, flags, sz))
     {
     }
@@ -33,7 +32,6 @@ public:
         using std::swap;
         swap(first._heap, second._heap);
         swap(first._flags, second._flags);
-        swap(first._sz, second._sz);
         swap(first._mem, second._mem);
     }
 
@@ -44,7 +42,6 @@ public:
 private:
     HANDLE _heap;
     DWORD _flags;
-    SIZE_T _sz;
     T * _mem;
 };
 
